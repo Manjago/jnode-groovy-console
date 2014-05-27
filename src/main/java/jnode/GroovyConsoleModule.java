@@ -2,12 +2,14 @@ package jnode;
 
 import groovy.lang.Binding;
 import jnode.event.IEvent;
+import jnode.jscript.JscriptExecutor;
 import jnode.logger.Logger;
 import jnode.module.JnodeModule;
 import jnode.module.JnodeModuleException;
 import org.codehaus.groovy.tools.shell.Groovysh;
 import org.codehaus.groovy.tools.shell.IO;
 
+import javax.script.Bindings;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -23,7 +25,10 @@ public class GroovyConsoleModule extends JnodeModule {
     private static final int SEC_IN_TEN_MINUTES = 600;
 
     public static void main(String[] args) throws JnodeModuleException {
-        GroovyConsoleModule module = new GroovyConsoleModule("C:\\workspaces\\untitled\\jnode-groovy\\config\\groovyConsole.config");
+        if (args.length < 1){
+            return;
+        }
+        GroovyConsoleModule module = new GroovyConsoleModule(args[0]);
         module.start();
     }
 
@@ -31,6 +36,7 @@ public class GroovyConsoleModule extends JnodeModule {
         super(configFile);
 
         int listenPort = Integer.parseInt(properties.getProperty("groovyConsole.listenPort", "3113"));
+        boolean debug = properties.getProperty("groovyConsole.debug", "").length() != 0;
 
         ServerSocket serverSocket;
         try {
@@ -67,7 +73,7 @@ public class GroovyConsoleModule extends JnodeModule {
                 throw new JnodeModuleException("fail accept socket", e);
             }
 
-            executor.execute(new HandleAccept(s));
+            executor.execute(new HandleAccept(s, debug));
 
             logger.l5(String.format("add new thread %s", executor));
         }
@@ -86,9 +92,10 @@ public class GroovyConsoleModule extends JnodeModule {
 
     private class HandleAccept implements Runnable {
         private final Socket s;
+        private boolean debug;
 
-        public HandleAccept(Socket s) {
-            this.s = s;
+        public HandleAccept(Socket s, boolean debug) {
+            this.s = s; this.debug = debug;
         }
 
         @Override
@@ -101,7 +108,14 @@ public class GroovyConsoleModule extends JnodeModule {
                 telnetStream.getOutputStream().writeWILL(1); // echo
                 telnetStream.getOutputStream().writeWILL(3); // supress go ahead
 
-                Groovysh sh = new Groovysh(new Binding(), new IO(telnetStream.getInputStream(),
+                final Binding binding = new Binding();
+                if (!debug){
+                    Bindings b = JscriptExecutor.createBindings();
+                    for(String key : b.keySet()){
+                        binding.setProperty(key, b.get(key));
+                    }
+                }
+                Groovysh sh = new Groovysh(binding, new IO(telnetStream.getInputStream(),
                         telnetStream.getOutputStream(), telnetStream.getOutputStream()));
 
                 sh.run();
