@@ -19,6 +19,9 @@
 
     <scm>
         <connection>scm:git:https://github.com/Manjago/jnode-groovy-console.git</connection>
+        <developerConnection>scm:git:https://github.com/Manjago/jnode-groovy-console.git</developerConnection>
+        <url>https://github.com/Manjago/jnode-groovy-console.git</url>
+        <tag>HEAD</tag>
     </scm>
 
     <build>
