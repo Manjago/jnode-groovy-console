@@ -26,7 +26,7 @@ public class GroovyConsoleModule extends JnodeModule {
     private static final int SEC_IN_TEN_MINUTES = 600;
 
     public static void main(String[] args) throws JnodeModuleException {
-        if (args.length < 1){
+        if (args.length < 1) {
             return;
         }
         GroovyConsoleModule module = new GroovyConsoleModule(args[0]);
@@ -99,7 +99,8 @@ public class GroovyConsoleModule extends JnodeModule {
         private boolean debug;
 
         public HandleAccept(Socket s, boolean debug) {
-            this.s = s; this.debug = debug;
+            this.s = s;
+            this.debug = debug;
         }
 
         @Override
@@ -115,15 +116,28 @@ public class GroovyConsoleModule extends JnodeModule {
                 // supress go ahead
                 telnetStream.getOutputStream().writeWILL(SUPRESS_GO_AHEAD);
 
+                final IO io = new IO(telnetStream.getInputStream(),
+                        telnetStream.getOutputStream(), telnetStream.getOutputStream());
+
                 final Binding binding = new Binding();
-                if (!debug){
+                binding.setProperty("console", new Object() {
+                            public void println(Object data) {
+                                io.out.println(String.valueOf(data));
+                            }
+
+                            public void print(Object data) {
+                                io.out.print(String.valueOf(data));
+                            }
+                        }
+                );
+
+                if (!debug) {
                     Bindings b = JscriptExecutor.createBindings();
-                    for(Map.Entry<String, Object> item : b.entrySet()){
+                    for (Map.Entry<String, Object> item : b.entrySet()) {
                         binding.setProperty(item.getKey(), item.getValue());
                     }
                 }
-                Groovysh sh = new Groovysh(binding, new IO(telnetStream.getInputStream(),
-                        telnetStream.getOutputStream(), telnetStream.getOutputStream()));
+                Groovysh sh = new Groovysh(binding, io);
 
                 sh.run();
                 logger.l5(String.format("bye connection %s", s));
