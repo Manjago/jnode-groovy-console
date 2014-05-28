@@ -17,6 +17,10 @@
         <jansi.version>1.11</jansi.version>
     </properties>
 
+    <scm>
+        <connection>scm:git:https://github.com/Manjago/jnode-groovy-console.git</connection>
+    </scm>
+
     <build>
         <plugins>
             <plugin>
