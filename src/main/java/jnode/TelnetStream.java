@@ -11,6 +11,8 @@ import static jnode.TelnetStream.Commands.*;
  *  Nikolay Ivanov Thursday at 11:05am  initial release
  */
 public class TelnetStream {
+    private static final int CR = 0x0d;
+    private static final int LF = 0x0a;
     private TelnetInputStream inputStream;
     private TelnetOutputStream outputStream;
 
@@ -55,19 +57,19 @@ public class TelnetStream {
         }
 
         private void handleWILL() throws IOException {
-            int opt = is.read();
+            is.read();
         }
 
         private void handleWONT() throws IOException {
-            int opt = is.read();
+            is.read();
         }
 
         private void handleDO() throws IOException {
-            int opt = is.read();
+            is.read();
         }
 
         private void handleDONT() throws IOException {
-            int opt = is.read();
+            is.read();
         }
 
         private void handleSB() throws IOException {
@@ -143,9 +145,9 @@ public class TelnetStream {
         @Override
         public void write(final int b) throws IOException {
             switch (b) {
-                case 0x0a:
-                    if (prev != 0x0d) {
-                        os.write(0x0d);
+                case LF:
+                    if (prev != CR) {
+                        os.write(CR);
                     }
                 default:
                     prev = b;

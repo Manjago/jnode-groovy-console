@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -91,6 +92,9 @@ public class GroovyConsoleModule extends JnodeModule {
     }
 
     private class HandleAccept implements Runnable {
+        private static final int LINE_MODE = 34;
+        private static final int ECHO = 1;
+        private static final int SUPRESS_GO_AHEAD = 3;
         private final Socket s;
         private boolean debug;
 
@@ -104,15 +108,18 @@ public class GroovyConsoleModule extends JnodeModule {
                 logger.l5(String.format("handle connection %s", s));
                 TelnetStream telnetStream = new TelnetStream(s.getInputStream(), s.getOutputStream());
 
-                telnetStream.getOutputStream().writeWONT(34); // linemode
-                telnetStream.getOutputStream().writeWILL(1); // echo
-                telnetStream.getOutputStream().writeWILL(3); // supress go ahead
+                // linemode
+                telnetStream.getOutputStream().writeWONT(LINE_MODE);
+                // echo
+                telnetStream.getOutputStream().writeWILL(ECHO);
+                // supress go ahead
+                telnetStream.getOutputStream().writeWILL(SUPRESS_GO_AHEAD);
 
                 final Binding binding = new Binding();
                 if (!debug){
                     Bindings b = JscriptExecutor.createBindings();
-                    for(String key : b.keySet()){
-                        binding.setProperty(key, b.get(key));
+                    for(Map.Entry<String, Object> item : b.entrySet()){
+                        binding.setProperty(item.getKey(), item.getValue());
                     }
                 }
                 Groovysh sh = new Groovysh(binding, new IO(telnetStream.getInputStream(),
@@ -120,7 +127,7 @@ public class GroovyConsoleModule extends JnodeModule {
 
                 sh.run();
                 logger.l5(String.format("bye connection %s", s));
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.l1("fail", e);
             } finally {
                 try {
