@@ -35,7 +35,11 @@ public class GroovyConsoleModule extends JnodeModule {
 
     public GroovyConsoleModule(String configFile) throws JnodeModuleException {
         super(configFile);
+    }
 
+
+    @Override
+    public void start() {
         int listenPort = Integer.parseInt(properties.getProperty("groovyConsole.listenPort", "3113"));
         boolean debug = properties.getProperty("groovyConsole.debug", "").length() != 0;
 
@@ -43,7 +47,8 @@ public class GroovyConsoleModule extends JnodeModule {
         try {
             serverSocket = new ServerSocket(listenPort, 0, InetAddress.getByName(null));
         } catch (IOException e) {
-            throw new JnodeModuleException("fail open server socket", e);
+            logger.l1("fail open server socket", e);
+            return;
         }
 
         executor.execute(new Runnable() {
@@ -71,18 +76,14 @@ public class GroovyConsoleModule extends JnodeModule {
                 s = serverSocket.accept();
                 logger.l5(String.format("got connection %s", s.toString()));
             } catch (IOException e) {
-                throw new JnodeModuleException("fail accept socket", e);
+                logger.l1("fail accept socket", e);
+                return;
             }
 
             executor.execute(new HandleAccept(s, debug));
 
             logger.l5(String.format("add new thread %s", executor));
         }
-    }
-
-
-    @Override
-    public void start() {
 
     }
 
